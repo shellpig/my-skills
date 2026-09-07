@@ -7,7 +7,28 @@ description: Disciplined diagnosis loop for hard bugs and performance regression
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-When exploring the codebase, use the project's domain glossary to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+When exploring the codebase, use the project's domain glossary — if it has one — to
+get a clear mental model of the relevant modules, and check any ADRs in the area
+you're touching. Where a project keeps neither, read its own specs and design docs
+instead. Don't invent the artefacts, and don't stall because they're missing.
+
+## First: which mode are you in?
+
+Diagnosing and repairing are separate grants. Decide which you have before Phase 1,
+and say which one you're working under.
+
+- **Read-only.** The user described a bug, pasted an error or screenshot, asked why
+  something happens, or asked you to investigate. Run the phases that only observe.
+  Report cause, evidence and a proposed fix — then stop. Do not edit source, add
+  persistent tests, or commit.
+- **Authorized repair.** The user asked you to fix, implement, or land it. Phases 5
+  and 6 apply in full.
+
+Temporary instrumentation (Phase 4) modifies source. Under a read-only grant, ask
+first, or work in a scratch copy outside the repo.
+
+Where the project states its own rules on modification authority, those win over
+this skill.
 
 ## Phase 1 — Build a feedback loop
 
@@ -90,6 +111,9 @@ Tool preference:
 
 ## Phase 5 — Fix + regression test
 
+**Requires an authorized-repair grant.** Under a read-only grant, stop at the end of
+Phase 4 and report the cause, the evidence, and the fix you would apply.
+
 Write the regression test **before the fix** — but only if there is a **correct seam** for it.
 
 A correct seam is one where the test exercises the **real bug pattern** as it occurs at the call site. If the only available seam is too shallow (single-caller test when the bug needs multiple callers, unit test that can't replicate the chain that triggered the bug), a regression test there gives false confidence.
@@ -114,4 +138,4 @@ Required before declaring done:
 - [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
 - [ ] The hypothesis that turned out correct is stated in the commit / PR message — so the next debugger learns
 
-**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.
+**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling), state the specific recommendation. Hand off to the `/improve-codebase-architecture` skill when it is installed and the user wants that scope; otherwise leave the recommendation in the report rather than expanding a local fix into a refactor. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.

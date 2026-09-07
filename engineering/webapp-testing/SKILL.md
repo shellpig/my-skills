@@ -6,7 +6,16 @@ license: Complete terms in LICENSE.txt
 
 # Web Application Testing
 
-To test local web applications, write native Python Playwright scripts.
+**Use the project's own test toolchain first.** If it already has Playwright (in any
+language), fixtures, and a command to run them, work inside that — a parallel script
+in a second language duplicates the setup and rots. Read the project's test and
+startup instructions before writing anything.
+
+Write a standalone Python Playwright script only when the project has no suitable
+entry point, or for throwaway reconnaissance you won't keep.
+
+The rest of this skill assumes the standalone case; the waiting and selector
+guidance applies either way.
 
 **Helper Scripts Available**:
 - `scripts/with_server.py` - Manages server lifecycle (supports multiple servers)
@@ -22,11 +31,17 @@ User task → Is it static HTML?
     │         └─ Fails/Incomplete → Treat as dynamic (below)
     │
     └─ No (dynamic webapp) → Is the server already running?
-        ├─ No → Run: python scripts/with_server.py --help
-        │        Then use the helper + write simplified Playwright script
+        ├─ No → Does the project define how to start it?
+        │        ├─ Yes → Follow it. Some projects require a specific
+        │        │         runtime, shell, working directory, or container
+        │        │         because the obvious `npm run dev` is known-broken
+        │        │         on that platform.
+        │        └─ No  → Run: python scripts/with_server.py --help
+        │                  Then use the helper + write a Playwright script
         │
         └─ Yes → Reconnaissance-then-action:
-            1. Navigate and wait for networkidle
+            1. Navigate, then wait for a condition you can name
+               (target element visible, expected data rendered)
             2. Take screenshot or inspect DOM
             3. Identify selectors from rendered state
             4. Execute actions with discovered selectors
@@ -57,7 +72,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=True) # Always launch chromium in headless mode
     page = browser.new_page()
     page.goto('http://localhost:5173') # Server already running and ready
-    page.wait_for_load_state('networkidle') # CRITICAL: Wait for JS to execute
+    page.locator('#app-root').wait_for() # Wait for a real readiness signal, not a timer
     # ... your automation logic
     browser.close()
 ```
@@ -77,16 +92,38 @@ with sync_playwright() as p:
 
 ## Common Pitfall
 
-❌ **Don't** inspect the DOM before waiting for `networkidle` on dynamic apps
-✅ **Do** wait for `page.wait_for_load_state('networkidle')` before inspection
+❌ **Don't** inspect the DOM the instant `goto()` returns on a dynamic app — the
+   framework hasn't rendered yet
+❌ **Don't** reach for `page.wait_for_load_state('networkidle')`. Playwright
+   discourages it: an idle network doesn't mean the UI finished rendering or the
+   save completed, and one long-lived request (polling, websocket, analytics) can
+   hang the wait until it times out
+✅ **Do** wait for the specific state that proves readiness — the element you're
+   about to act on, the row you expect, the status text, the version counter that
+   advances after a save:
+
+```python
+page.locator('[data-testid="character-row"]').first.wait_for()
+expect(page.get_by_role('button', name='Save')).to_be_enabled()
+```
+
+Web-first assertions (`expect(...)`) retry on their own, so they double as waits.
 
 ## Best Practices
 
 - **Use bundled scripts as black boxes** - To accomplish a task, consider whether one of the scripts available in `scripts/` can help. These scripts handle common, complex workflows reliably without cluttering the context window. Use `--help` to see usage, then invoke directly. 
 - Use `sync_playwright()` for synchronous scripts
-- Always close the browser when done
+- Always close the browser when done — and only close what *you* started; leave the
+  user's own running servers and browsers alone
 - Use descriptive selectors: `text=`, `role=`, CSS selectors, or IDs
-- Add appropriate waits: `page.wait_for_selector()` or `page.wait_for_timeout()`
+- Wait on observable state: `page.wait_for_selector()`, `locator.wait_for()`, or a
+  retrying `expect()`. Keep `page.wait_for_timeout()` for ad-hoc debugging only — a
+  fixed delay states no completion condition, so it is flaky when slow and wasteful
+  when fast
+- Headless by default. Run headed only when a human needs to watch
+- **Know what the test run destroys before you start it.** Suites that seed or reset
+  state can wipe real local data; check the reset scope and back up anything the
+  user cares about
 
 ## Reference Files
 
