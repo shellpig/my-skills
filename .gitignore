@@ -1,0 +1,4 @@
+# Third-party skill with its own upstream repo — not vendored here.
+# Restore with:
+#   git clone https://github.com/guangyuspace/codex-gamestudio-skill gamestudio
+gamestudio/
