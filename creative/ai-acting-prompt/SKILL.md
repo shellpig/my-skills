@@ -1,0 +1,56 @@
+---
+name: ai-acting-prompt
+description: Write and debug acting-level prompts for AI video models (Seedance, Kling, Veo, etc.) so characters perform instead of posing — layered structure, per-beat timelines, turn-taking with interruptions and overlaps, speech disfluency, emotion order, and FACS action units as calibration. Use when a video prompt contains dialogue, emotional acting, crying, arguments, confessions, or two-person drama, or when generated characters look like they are reciting lines, swapping expressions like emojis, or acting fake despite correct lip sync.
+---
+
+# AI Acting Prompt
+
+核心原則：模型看不見「她很悲傷」，只看得見臉、呼吸、聲音和身體留下的證據。把情緒改寫成**時間軸上可被觀察的動作**，並寫出情緒受到的**阻力**——高級的悲傷不是增加表情，而是增加阻力。
+
+## 快速對照
+
+| 不要這樣寫 | 改成這樣寫 |
+|---|---|
+| 男人悲傷欲絕，淚流滿面地說 | 他想把每句話說完，卻在「我」字卡住：口型已形成、聲音沒出來，喉結輕動後吞回去；眼眶濕潤但淚不落下 |
+| 女人憤怒地哭泣 | 3.7–6.5 秒憤怒撐著 → 6.5–11.5 轉為自證 → 11.5 起眼眶開始濕潤 → 16.5 聲音第一次破裂 |
+| A 說完，B 回答 | B 聽見「說—」就判斷 A 要結束談話，在 A 尾音未落時搶入，兩人聲音重疊約 0.2 秒後 A 退讓 |
+
+## 工作流程
+
+1. **先問每個角色此刻想達成什麼**（不是感受什麼）。例：他用禮貌和否認避免當場崩潰；她搶話不是責備，是發現他在關閉自己。
+2. **分層寫提示詞**，每層只負責一件事，避免長提示詞內部權重衝突：
+   1. `【全局設定】` 畫幅、片感、fps、環境與光線、年代、180° 軸線與站位
+   2. `【人物與表演】` 每人：外型、聲線、潛台詞、情緒方向、真正目標
+   3. `【表演控制原則】` 情緒如何被壓住、在哪個詞失守、聽者如何反應、話輪規則
+   4. `【連續性】` 跨鏡頭的臉、服裝、濕潤程度、淚水積聚進度、光向
+   5. `【鏡頭N｜起–止秒】` 景別、焦段、機位，再切成 1–4 秒的小拍
+3. **每個小拍套用拍公式**：
+   `時間碼 → 說話目標 → 原句＋觸發詞 → 可見反應 → 聲音動作 → 話輪／聽者反應 → 結束狀態`
+4. **設計話輪而不是排列台詞**，見 [references/dialogue-turns.md](references/dialogue-turns.md)。
+5. **需要說話不流暢時**，依「人物此刻做不到什麼」選類型，見 [references/disfluency.md](references/disfluency.md)。
+6. **臉部細節**先用白話描述，必要時再補 AU 與強度做校準，見 [references/facs-au.md](references/facs-au.md)。
+7. 結構範例見 [references/example-skeleton.md](references/example-skeleton.md)。
+
+## 寫作規則
+
+- **情緒有順序，一次只端一種**。真實順序通常是：維持 → 保護層裂開 → 聲音破裂 → 底層情緒出現。每段至少 3 秒。
+- **一句台詞可以拆成多個動作**：第一句音量高仍直視 → 兩句之間一次短促吸氣、目光下落不到半秒 → 第二句更輕更慢、攻擊性消失。
+- **斷句照字面寫**：`「手續我都辦好了，你不用——」`，並註明口型停在哪個音、被誰在哪裡打斷。
+- **動作不是裝飾，是心理證據**：每個動作都要能回答「他為什麼此刻這樣做」。例：只有在安慰對方時他才看向她。
+- **延後出現的反應用時間寫**：「到 11.5 秒眼眶才開始濕潤」「鏡頭二才有一滴淚落下」，比列禁止清單更穩定。
+- **給聽者戲份**：決定性的情緒常在聽完那句話之後的反應，而不是台詞本身。
+- **台詞量要留空間**：計入停頓、吸氣、搶話、聽者反應；塞不下就刪台詞，不要加速講。
+
+## 自檢清單
+
+- [ ] 每個角色都有「目標」，不只有「情緒」
+- [ ] 每次搶話、改口、停頓都有觸發詞
+- [ ] 重疊真的是聲音重疊（後一句在前一句尾音未落時開始），不是輪流
+- [ ] 口吃、哽咽發生在身體上（呼吸、口型、吞嚥），不是只重複字
+- [ ] 沒有兩種情緒同時端上來
+- [ ] 切鏡後情緒、濕潤程度、視線和手部動作連續
+- [ ] 每個時間段的台詞＋動作在秒數內演得完
+
+## 除錯
+
+生成結果不對時，先判斷錯在哪一層（全局／人物／時間軸／聲音與鏡頭），**只改那一層**。同時重寫風格、人物和台詞會讓你無法知道哪個改動有效。

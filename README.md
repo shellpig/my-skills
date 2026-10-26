@@ -8,6 +8,7 @@ Personal collection of Claude Code / agent skills.
 |---|---|
 | `engineering/` | Diagnosis, TDD, refactoring, web app testing |
 | `productivity/` | Interviewing, writing, skill authoring |
+| `creative/` | AI video prompting (acting, dialogue) |
 | `personal/` | Tied to my own setup, not general purpose |
 | `misc/` | Repo scaffolding and guardrails |
 | `deprecated/` | Kept for reference, not installed |
