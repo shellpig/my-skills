@@ -2,3 +2,8 @@
 # Restore with:
 #   git clone https://github.com/guangyuspace/codex-gamestudio-skill gamestudio
 gamestudio/
+
+# Third-party skill with its own upstream repo — not vendored here.
+# Restore with:
+#   git clone https://github.com/liyue-aigc/seedance-2-5-video-director
+seedance-2-5-video-director/
